@@ -27,7 +27,13 @@ c=3*10**8
 G=6.6743*10**-11
 e=0.4
 p=0.3
-t=0.0
 
 
     
+y0=[e,p,m1,m2,c,G]
+
+t=linspace (0,10,101)
+sol=odeint (f,y0,t,args=(m1,m2,p,e,c,G))
+plot(t,sol[:,0])
+plot(t,sol[:,1])
+show()
