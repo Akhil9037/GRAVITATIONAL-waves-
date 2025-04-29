@@ -1,1 +1,63 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Constants
+G = 6.67430e-11
+c = 2.99792458e8
+solar_mass = 1.98847e30
+
+# Parameters
+m1 = 10 * solar_mass
+m2 = 10 * solar_mass
+D = 1000e6 * 3.086e16
+
+theta = np.pi / 4
+phi_0 = 0.1
+e0_list = [0.1,0.01,0.001,0.0001, 0.3,0.5]
+
+# Chirp mass
+M = m1 + m2
+mu = m1 * m2 / M
+chirp_mass = mu**(3/5) * M**(2/5)
+
+# Frequency and time
+f0 = 20
+tau = (5/256) * (c**5 / (G**(5/3) * chirp_mass**(5/3))) * (np.pi * f0)**(-8/3)
+t = np.linspace(0, 0.95 * tau, 5000)
+f = f0 / (1 - t / tau)**(3/8)
+
+# Plot
+fig, axes = plt.subplots(len(e0_list), 1, figsize=(12, 3 * len(e0_list)))
+
+for i, e0 in enumerate(e0_list):
+    # Manual trapezoidal integration for Phi(t)
+    dt = np.diff(t, prepend=t[0])
+    f_integral = np.cumsum(0.5 * (f + np.roll(f, 1)) * dt)
+    f_integral[0] = 0
+    Phi = 2 * np.pi * f_integral + phi_0
+
+    # Eccentricity evolution
+    e = e0 * (1 - t / tau)**(19/12)
+    e = np.clip(e, 0, None)
+
+    # Amplitude
+    prefactor = (4 * G**(5/3) * chirp_mass**(5/3)) / (c**4 * D)
+    A = prefactor * (np.pi * f)**(2/3)
+
+    # Strains
+    h_plus = A * (1 + np.cos(theta)**2) * (np.cos(Phi) + e * np.cos(2 * Phi))
+    h_cross = -2 * A * np.cos(theta) * (np.sin(Phi) + e * np.sin(2 * Phi))
+
+    # Plotting
+    axes[i].plot(t, h_plus, label=r'$h_+(t)$')
+    axes[i].plot(t, h_cross, label=r'$h_\times(t)$', color='r')
+    axes[i].set_ylabel('Strain')
+    axes[i].set_title(f'Eccentricity e0 = {e0}')
+    axes[i].legend()
+    axes[i].grid(True)
+    axes[i].set_xlabel('Time (s)')
+
+plt.tight_layout()
+plt.subplots_adjust(top=0.95)
+plt.show()
 
